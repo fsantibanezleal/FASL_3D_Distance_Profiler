@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FASL 3D Distance Profiler</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <header>
+        <h1>FASL 3D Distance Profiler</h1>
+        <span class="version">v2.0.0</span>
+    </header>
+
+    <main>
+        <!-- LEFT PANEL: 2D Views -->
+        <section id="panel-left" class="panel">
+            <h2>2D Views</h2>
+            <div class="image-group">
+                <div class="image-box">
+                    <h3>RGB Image</h3>
+                    <canvas id="canvas-rgb" width="256" height="256"></canvas>
+                </div>
+                <div class="image-box">
+                    <h3>Depth Map</h3>
+                    <canvas id="canvas-depth" width="256" height="256"></canvas>
+                </div>
+                <div class="image-box">
+                    <h3>Normal Map</h3>
+                    <canvas id="canvas-normals" width="256" height="256"></canvas>
+                </div>
+            </div>
+            <div class="profile-section">
+                <h3>Cross-Section Profile</h3>
+                <p class="hint">Click two points on the depth map to draw a profile line.</p>
+                <canvas id="canvas-profile" width="380" height="150"></canvas>
+                <div id="profile-metrics" class="metrics-box"></div>
+            </div>
+        </section>
+
+        <!-- CENTER PANEL: 3D View -->
+        <section id="panel-center" class="panel">
+            <h2>3D Surface View</h2>
+            <div id="three-container"></div>
+            <div class="render-info">
+                <span id="info-vertices">Vertices: --</span>
+                <span id="info-faces">Faces: --</span>
+            </div>
+        </section>
+
+        <!-- RIGHT PANEL: Controls -->
+        <section id="panel-right" class="panel">
+            <h2>Controls</h2>
+
+            <fieldset>
+                <legend>Scene Generation</legend>
+                <label for="select-scene">Scene Type:</label>
+                <select id="select-scene">
+                    <option value="gaussian_hills">Gaussian Hills</option>
+                    <option value="terrain">Terrain</option>
+                    <option value="object_on_table">Object on Table</option>
+                    <option value="conveyor_belt">Conveyor Belt</option>
+                    <option value="wave_surface">Wave Surface</option>
+                </select>
+                <label for="input-width">Width:</label>
+                <input type="number" id="input-width" value="256" min="32" max="512" step="32">
+                <label for="input-height">Height:</label>
+                <input type="number" id="input-height" value="256" min="32" max="512" step="32">
+                <label for="input-seed">Seed (optional):</label>
+                <input type="number" id="input-seed" value="" placeholder="random">
+                <button id="btn-generate" class="btn-primary">Generate Scene</button>
+            </fieldset>
+
+            <fieldset>
+                <legend>Upload Images</legend>
+                <label for="upload-depth">Depth Map:</label>
+                <input type="file" id="upload-depth" accept="image/*">
+                <label for="upload-rgb">RGB Image (optional):</label>
+                <input type="file" id="upload-rgb" accept="image/*">
+                <button id="btn-upload" class="btn-primary">Upload</button>
+            </fieldset>
+
+            <fieldset>
+                <legend>Processing Pipeline</legend>
+                <label for="slider-sigma-s">Bilateral Sigma Spatial: <span id="val-sigma-s">5.0</span></label>
+                <input type="range" id="slider-sigma-s" min="0.1" max="20" step="0.5" value="5.0">
+                <label for="slider-sigma-r">Bilateral Sigma Range: <span id="val-sigma-r">10.0</span></label>
+                <input type="range" id="slider-sigma-r" min="0.1" max="100" step="1" value="10.0">
+                <label for="slider-hole">Hole Fill Size: <span id="val-hole">10</span></label>
+                <input type="range" id="slider-hole" min="0" max="50" step="1" value="10">
+                <button id="btn-process" class="btn-primary">Apply Processing</button>
+            </fieldset>
+
+            <fieldset>
+                <legend>Display Options</legend>
+                <label for="select-colormap">Colormap:</label>
+                <select id="select-colormap">
+                    <option value="viridis" selected>Viridis</option>
+                    <option value="hot">Hot</option>
+                    <option value="jet">Jet</option>
+                    <option value="greyscale">Greyscale</option>
+                </select>
+                <label><input type="checkbox" id="chk-wireframe"> Wireframe</label>
+                <label><input type="checkbox" id="chk-normals"> Show Normals</label>
+                <label><input type="checkbox" id="chk-points"> Point Cloud Mode</label>
+                <label>Color Mode:
+                    <select id="select-color-mode">
+                        <option value="rgb" selected>RGB Texture</option>
+                        <option value="depth">Depth Colormap</option>
+                    </select>
+                </label>
+            </fieldset>
+
+            <fieldset>
+                <legend>Surface Metrics</legend>
+                <button id="btn-metrics" class="btn-secondary">Compute Metrics</button>
+                <div id="metrics-display" class="metrics-box"></div>
+            </fieldset>
+
+            <div id="status-bar" class="status-bar">Ready</div>
+        </section>
+    </main>
+
+    <!-- Three.js from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script src="/static/js/renderer2d.js"></script>
+    <script src="/static/js/renderer3d.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
