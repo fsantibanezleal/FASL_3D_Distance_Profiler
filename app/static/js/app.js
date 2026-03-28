@@ -223,6 +223,26 @@
             }
         });
 
+        // ----- Help modal -----
+        const helpModal = document.getElementById("help-modal");
+        document.getElementById("btn-help").addEventListener("click", () => {
+            helpModal.style.display = helpModal.style.display === "none" ? "flex" : "none";
+        });
+        document.getElementById("btn-close-help").addEventListener("click", () => {
+            helpModal.style.display = "none";
+        });
+        helpModal.addEventListener("click", (e) => {
+            if (e.target === helpModal) helpModal.style.display = "none";
+        });
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape" && helpModal.style.display !== "none") {
+                helpModal.style.display = "none";
+            }
+            if (e.key === "?" && document.activeElement.tagName !== "INPUT" && document.activeElement.tagName !== "SELECT") {
+                helpModal.style.display = helpModal.style.display === "none" ? "flex" : "none";
+            }
+        });
+
         // ----- Auto-generate initial scene -----
         setTimeout(async () => {
             try {

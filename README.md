@@ -1,19 +1,18 @@
-# FASL 3D Distance Profiler
+# SurfaceScope -- RGB-D Surface Profiler & Analyzer
 
-RGB-D depth profiling application for synthetic and real depth data. Generates depth maps, applies processing pipelines, reconstructs 3D surfaces, and computes roughness metrics.
+A web-based RGB-D depth profiling application for synthetic and real depth data. SurfaceScope generates depth maps from five configurable scene types, applies edge-preserving processing pipelines (bilateral filter, hole filling), reconstructs interactive 3D surface meshes, computes differential geometry quantities (Gaussian and mean curvature), extracts cross-section profiles, and reports ISO 4287 surface roughness metrics (Ra, Rq, Rz, Rsk, Rku). Built with a Python/FastAPI backend and a Three.js-powered frontend for real-time 3D visualization.
 
-## Features
+## Frontend
 
-- **5 synthetic scene types**: Gaussian hills, terrain, object on table, conveyor belt, wave surface
-- **Bilateral filter**: Edge-preserving depth smoothing
-- **Hole filling**: Nearest-neighbour interpolation for invalid pixels
-- **Surface normals**: Per-pixel normals via finite-difference gradients
-- **3D mesh generation**: Depth-to-triangle-mesh for Three.js rendering
-- **Surface curvature**: Gaussian (K) and mean (H) curvature computation
-- **Cross-section profiles**: Bilinear-interpolated 1D height profiles
-- **Roughness metrics**: ISO 4287 parameters (Ra, Rq, Rz, Rsk, Rku)
-- **Object detection**: Depth-thresholding with connected-component labelling
-- **Interactive 3D viewer**: Three.js with OrbitControls, wireframe, point cloud modes
+![Frontend](docs/png/frontend.png)
+
+## Architecture
+
+![Architecture](docs/svg/architecture.svg)
+
+## Processing Pipeline
+
+![Pipeline](docs/svg/pipeline.svg)
 
 ## Quick Start
 
@@ -25,18 +24,93 @@ pip install -r requirements.txt
 python run_app.py
 ```
 
-Open http://localhost:8009 in your browser.
+Open **http://localhost:8009** in your browser.
 
-## API Endpoints
+## Features
 
-| Method | Endpoint         | Description                          |
-|--------|------------------|--------------------------------------|
-| POST   | /api/generate    | Generate synthetic scene             |
-| POST   | /api/upload      | Upload depth + RGB images            |
-| POST   | /api/process     | Apply filtering pipeline             |
-| GET    | /api/state       | Get current state (images + mesh)    |
-| POST   | /api/profile     | Extract cross-section profile        |
-| GET    | /api/metrics     | Surface roughness and curvature      |
+- **5 synthetic scene types**: Gaussian hills, terrain, object on table, conveyor belt, wave surface
+- **Bilateral filter**: Edge-preserving depth smoothing with configurable spatial and range sigma
+- **Hole filling**: Nearest-neighbour interpolation for invalid pixels with configurable maximum hole size
+- **Surface normals**: Per-pixel unit normals via finite-difference gradients (numpy.gradient)
+- **3D mesh generation**: Vectorised depth-to-triangle-mesh conversion for Three.js BufferGeometry
+- **Surface curvature**: Gaussian curvature K and mean curvature H from second-order depth derivatives
+- **Cross-section profiles**: Bilinear-interpolated 1D height profiles along arbitrary user-drawn lines
+- **Roughness metrics**: ISO 4287 parameters -- Ra, Rq, Rz, Rsk, Rku
+- **Object detection**: Depth-thresholding with connected-component labelling for raised objects
+- **Interactive 3D viewer**: Three.js r128 with OrbitControls, wireframe overlay, point cloud mode
+- **Surface area measurement**: Vectorised 3D triangle-area computation over the depth map
+- **Image upload**: Support for user-provided depth + RGB image pairs (8-bit and 16-bit PNG)
+- **Export**: PLY (ASCII), PCD (ASCII), and Wavefront OBJ mesh export
+- **Colourmap rendering**: Hot, Viridis, Jet, and Greyscale depth visualisation
+- **Help modal**: In-app documentation with keyboard/mouse controls and pipeline explanation
+
+## Project Structure
+
+```
+FASL_3D_Distance_Profiler/
+|-- app/
+|   |-- __init__.py
+|   |-- main.py                     # FastAPI application entry point
+|   |-- api/
+|   |   |-- __init__.py
+|   |   |-- routes.py               # REST API endpoints (generate, upload, process, profile, metrics, export, measure)
+|   |-- simulation/
+|   |   |-- __init__.py
+|   |   |-- colormap.py             # Depth-to-colour mapping (hot, viridis, jet, greyscale)
+|   |   |-- depth_generator.py      # Synthetic RGB-D scene generator (5 scene types)
+|   |   |-- depth_processing.py     # Bilateral filter, hole filling, normals, point cloud projection
+|   |   |-- export.py               # PLY, PCD, OBJ file export
+|   |   |-- profile_analysis.py     # Roughness metrics (Ra, Rq, Rz, Rsk, Rku), histogram, object detection
+|   |   |-- surface_reconstruction.py # Depth-to-mesh, curvature, cross-section extraction
+|   |-- static/
+|       |-- index.html              # Single-page application frontend
+|       |-- css/style.css           # Dark-theme 3-panel layout stylesheet
+|       |-- js/app.js               # Main controller: wires UI to API
+|       |-- js/renderer2d.js        # 2D canvas rendering + cross-section tool
+|       |-- js/renderer3d.js        # Three.js 3D surface renderer
+|-- docs/
+|   |-- architecture.md             # System architecture and component diagram
+|   |-- depth_theory.md             # RGB-D depth processing theory with equations
+|   |-- development_history.md      # Changelog with mathematical foundations
+|   |-- references.md               # Academic papers, standards, and library references
+|   |-- svg/
+|       |-- architecture.svg        # Architecture diagram
+|       |-- pipeline.svg            # Processing pipeline diagram
+|-- tests/
+|   |-- __init__.py
+|   |-- test_depth_processing.py    # Bilateral filter, hole filling, normals, point cloud tests
+|   |-- test_export.py              # PLY, PCD, OBJ export tests
+|   |-- test_measurement.py         # Distance, angle, area measurement tests
+|   |-- test_profile.py             # Roughness, histogram, object detection tests
+|   |-- test_surface.py             # Mesh generation, curvature, cross-section tests
+|-- build.spec                      # PyInstaller spec file
+|-- Build_PyInstaller.ps1           # PowerShell build script
+|-- requirements.txt                # Python dependencies
+|-- run_app.py                      # Uvicorn launcher with auto-browser
+|-- __init__.py
+```
+
+## API Documentation
+
+| Method | Path               | Description                                         |
+|--------|--------------------|-----------------------------------------------------|
+| POST   | `/api/generate`    | Generate a synthetic RGB-D scene                    |
+| POST   | `/api/upload`      | Upload depth map + optional RGB image               |
+| POST   | `/api/process`     | Apply bilateral filter + hole filling pipeline      |
+| GET    | `/api/state`       | Get current state (base64 images + mesh JSON)       |
+| POST   | `/api/profile`     | Extract cross-section profile between two points    |
+| GET    | `/api/metrics`     | Compute depth histogram, curvature, object detection|
+| POST   | `/api/measure`     | Measure distance, angle, or surface area            |
+| GET    | `/api/export/ply`  | Download point cloud / mesh as PLY (ASCII)          |
+| GET    | `/api/export/pcd`  | Download point cloud as PCD (ASCII)                 |
+| GET    | `/api/export/obj`  | Download mesh as Wavefront OBJ                      |
+| GET    | `/api/scene_types` | List available synthetic scene types                |
+| GET    | `/api/colormaps`   | List available colourmap names                      |
+| GET    | `/health`          | Health check endpoint                               |
+
+## Port
+
+**8009**
 
 ## Running Tests
 
@@ -52,6 +126,17 @@ python tests/test_profile.py
 .\Build_PyInstaller.ps1
 ```
 
-## Port
+## Documentation
 
-8009
+- [Architecture](docs/architecture.md) -- System overview, technology stack, data flow
+- [Depth Theory](docs/depth_theory.md) -- Mathematical foundations: pinhole model, bilateral filter, curvature, roughness
+- [Development History](docs/development_history.md) -- Changelog with equations
+- [References](docs/references.md) -- Academic papers, standards, hardware, and software references
+
+## References
+
+- Tomasi, C. & Manduchi, R. (1998). Bilateral Filtering for Gray and Color Images. ICCV.
+- ISO 4287:1997. GPS -- Surface texture: Profile method.
+- do Carmo, M. P. (1976). Differential Geometry of Curves and Surfaces.
+- Hartley, R. & Zisserman, A. (2003). Multiple View Geometry in Computer Vision.
+- Three.js -- JavaScript 3D library: https://threejs.org/

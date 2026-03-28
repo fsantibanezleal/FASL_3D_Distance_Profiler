@@ -121,7 +121,7 @@ def export_obj_mesh(points: np.ndarray, faces: np.ndarray) -> str:
     Returns:
         OBJ file content as string.
     """
-    lines = ['# Exported from FASL 3D Distance Profiler']
+    lines = ['# Exported from SurfaceScope']
     for p in points:
         lines.append(f'v {p[0]:.6f} {p[1]:.6f} {p[2]:.6f}')
     for f in faces:
