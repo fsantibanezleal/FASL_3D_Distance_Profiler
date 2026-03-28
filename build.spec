@@ -1,6 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 """
-PyInstaller spec file for FASL 3D Distance Profiler.
+PyInstaller spec file for SurfaceScope — RGB-D Surface Profiler & Analyzer.
 
 Build command:
     pyinstaller build.spec
@@ -75,7 +75,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='FASL_3D_Distance_Profiler',
+    name='SurfaceScope',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -91,5 +91,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='FASL_3D_Distance_Profiler',
+    name='SurfaceScope',
 )
