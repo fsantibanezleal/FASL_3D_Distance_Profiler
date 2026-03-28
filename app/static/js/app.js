@@ -173,6 +173,34 @@
             Renderer3D.setPointCloud(e.target.checked);
         });
 
+        // ----- Export buttons -----
+        ["ply", "pcd", "obj"].forEach(fmt => {
+            document.getElementById(`btn-export-${fmt}`).addEventListener("click", () => {
+                setStatus(`Exporting ${fmt.toUpperCase()}...`, "");
+                const link = document.createElement("a");
+                link.href = `${API}/export/${fmt}`;
+                link.download = `scene.${fmt}`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                setStatus(`${fmt.toUpperCase()} export started`, "success");
+            });
+        });
+
+        // ----- Measure area button -----
+        document.getElementById("btn-measure-area").addEventListener("click", async () => {
+            try {
+                const data = await apiPost("/measure", {
+                    measurement_type: "area",
+                    pixel_size: 1.0,
+                });
+                const display = document.getElementById("measurement-display");
+                display.textContent = `Surface Area: ${data.value.toFixed(2)} ${data.unit}`;
+            } catch (e) {
+                console.error("Measurement error:", e);
+            }
+        });
+
         // ----- Metrics button -----
         document.getElementById("btn-metrics").addEventListener("click", async () => {
             try {
