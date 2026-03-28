@@ -19,8 +19,9 @@ GET  /api/metrics    - Compute surface roughness metrics
 import io
 import base64
 import numpy as np
-from typing import Optional
+from typing import Optional, List
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from PIL import Image
 
@@ -40,7 +41,11 @@ from app.simulation.profile_analysis import (
     compute_roughness,
     compute_histogram,
     detect_objects,
+    measure_distance_3d,
+    measure_angle_between_normals,
+    measure_area,
 )
+from app.simulation.export import export_ply, export_pcd, export_obj_mesh
 from app.simulation.colormap import apply_colormap, COLOURMAP_NAMES
 
 router = APIRouter(prefix="/api", tags=["api"])
@@ -89,6 +94,14 @@ class ProfileRequest(BaseModel):
     end_x: float = Field(..., description="End X pixel coordinate")
     end_y: float = Field(..., description="End Y pixel coordinate")
     num_samples: int = Field(default=256, ge=10, le=1024)
+
+class MeasureRequest(BaseModel):
+    measurement_type: str = Field(..., description="Type: 'distance', 'angle', or 'area'")
+    point_a: Optional[List[float]] = Field(default=None, description="First 3D point [x,y,z]")
+    point_b: Optional[List[float]] = Field(default=None, description="Second 3D point [x,y,z]")
+    normal_a: Optional[List[float]] = Field(default=None, description="First normal [nx,ny,nz]")
+    normal_b: Optional[List[float]] = Field(default=None, description="Second normal [nx,ny,nz]")
+    pixel_size: float = Field(default=1.0, description="Pixel physical size for area computation")
 
 
 # ---------------------------------------------------------------------------
@@ -317,6 +330,130 @@ async def metrics():
             "mean": float(depth[depth > 0].mean()) if (depth > 0).any() else 0,
         },
     }
+
+
+# ---------------------------------------------------------------------------
+# Export endpoints
+# ---------------------------------------------------------------------------
+
+@router.get("/export/ply")
+async def export_ply_endpoint():
+    """Export the current scene point cloud / mesh as PLY (ASCII).
+
+    Returns a downloadable PLY file as a streaming response.
+    """
+    if not state.has_data():
+        raise HTTPException(status_code=400, detail="No scene loaded.")
+
+    depth = state.processed_depth if state.processed_depth is not None else state.depth
+    mesh = depth_to_mesh_fast(depth, rgb=state.rgb, subsample=2)
+
+    points = np.array(mesh["vertices"], dtype=np.float64)
+    faces = np.array(mesh["faces"], dtype=np.int32) if mesh["faces"] else None
+
+    # Convert normalised [0,1] colours to [0,255] uint8
+    colors = None
+    if mesh["colors"]:
+        colors = (np.array(mesh["colors"]) * 255).clip(0, 255).astype(np.uint8)
+
+    content = export_ply(points, colors=colors, faces=faces)
+    return StreamingResponse(
+        io.BytesIO(content.encode("ascii")),
+        media_type="application/x-ply",
+        headers={"Content-Disposition": "attachment; filename=scene.ply"},
+    )
+
+
+@router.get("/export/pcd")
+async def export_pcd_endpoint():
+    """Export the current scene point cloud as PCD (ASCII).
+
+    Returns a downloadable PCD file as a streaming response.
+    """
+    if not state.has_data():
+        raise HTTPException(status_code=400, detail="No scene loaded.")
+
+    depth = state.processed_depth if state.processed_depth is not None else state.depth
+    mesh = depth_to_mesh_fast(depth, rgb=state.rgb, subsample=2)
+
+    points = np.array(mesh["vertices"], dtype=np.float64)
+
+    colors = None
+    if mesh["colors"]:
+        colors = (np.array(mesh["colors"]) * 255).clip(0, 255).astype(np.uint8)
+
+    content = export_pcd(points, colors=colors)
+    return StreamingResponse(
+        io.BytesIO(content.encode("ascii")),
+        media_type="application/x-pcd",
+        headers={"Content-Disposition": "attachment; filename=scene.pcd"},
+    )
+
+
+@router.get("/export/obj")
+async def export_obj_endpoint():
+    """Export the current scene mesh as Wavefront OBJ.
+
+    Returns a downloadable OBJ file as a streaming response.
+    """
+    if not state.has_data():
+        raise HTTPException(status_code=400, detail="No scene loaded.")
+
+    depth = state.processed_depth if state.processed_depth is not None else state.depth
+    mesh = depth_to_mesh_fast(depth, rgb=state.rgb, subsample=2)
+
+    points = np.array(mesh["vertices"], dtype=np.float64)
+    faces = np.array(mesh["faces"], dtype=np.int32)
+
+    if len(faces) == 0:
+        raise HTTPException(status_code=400, detail="No faces in mesh to export.")
+
+    content = export_obj_mesh(points, faces)
+    return StreamingResponse(
+        io.BytesIO(content.encode("ascii")),
+        media_type="application/x-wavefront-obj",
+        headers={"Content-Disposition": "attachment; filename=scene.obj"},
+    )
+
+
+# ---------------------------------------------------------------------------
+# Measurement endpoint
+# ---------------------------------------------------------------------------
+
+@router.post("/measure")
+async def measure(req: MeasureRequest):
+    """Perform a measurement on the current scene.
+
+    Supported measurement types:
+        - 'distance': Euclidean distance between two 3D points.
+        - 'angle': Angle between two surface normals in degrees.
+        - 'area': Total 3D surface area of the loaded depth map.
+    """
+    if req.measurement_type == "distance":
+        if req.point_a is None or req.point_b is None:
+            raise HTTPException(status_code=400, detail="point_a and point_b required for distance measurement.")
+        if len(req.point_a) != 3 or len(req.point_b) != 3:
+            raise HTTPException(status_code=400, detail="Points must be 3D [x, y, z].")
+        dist = measure_distance_3d(np.array(req.point_a), np.array(req.point_b))
+        return {"measurement_type": "distance", "value": dist, "unit": "mm"}
+
+    elif req.measurement_type == "angle":
+        if req.normal_a is None or req.normal_b is None:
+            raise HTTPException(status_code=400, detail="normal_a and normal_b required for angle measurement.")
+        if len(req.normal_a) != 3 or len(req.normal_b) != 3:
+            raise HTTPException(status_code=400, detail="Normals must be 3D [nx, ny, nz].")
+        angle = measure_angle_between_normals(np.array(req.normal_a), np.array(req.normal_b))
+        return {"measurement_type": "angle", "value": angle, "unit": "degrees"}
+
+    elif req.measurement_type == "area":
+        if not state.has_data():
+            raise HTTPException(status_code=400, detail="No scene loaded.")
+        depth = state.processed_depth if state.processed_depth is not None else state.depth
+        area = measure_area(depth, pixel_size=req.pixel_size)
+        return {"measurement_type": "area", "value": area, "unit": "mm^2"}
+
+    else:
+        raise HTTPException(status_code=400, detail=f"Unknown measurement type: {req.measurement_type}. Use 'distance', 'angle', or 'area'.")
 
 
 # ---------------------------------------------------------------------------
