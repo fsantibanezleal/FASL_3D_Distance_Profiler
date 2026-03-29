@@ -26,35 +26,41 @@ Industrial surface inspection requires measuring roughness, curvature, and defec
 
 ## Mathematical Model
 
-### Pinhole Camera Back-Projection
-
-3D world coordinates are recovered from pixel (u, v) and depth Z:
-
-```
-X = (u - cx) * Z / fx,    Y = (v - cy) * Z / fy
-```
-
-where `(cx, cy)` is the principal point and `(fx, fy)` are the focal lengths in pixels.
-
-### Gaussian Curvature
-
-The intrinsic surface curvature is computed from second-order depth derivatives:
+### Pinhole Camera — From Pixels to 3D
+An RGB-D camera provides a depth value Z at each pixel (u,v). The pinhole model recovers the 3D world coordinates by "unprojecting" through the camera's intrinsic parameters:
 
 ```
-K = (f_xx * f_yy - f_xy^2) / (1 + f_x^2 + f_y^2)^2
+X = (u − cx) · Z / fx,    Y = (v − cy) · Z / fy
 ```
 
-where `f_x, f_y` are first derivatives and `f_xx, f_yy, f_xy` are second derivatives of the depth map.
+where **(cx, cy)** is the principal point (optical center in pixels), **(fx, fy)** are the focal lengths in pixels, and **Z** is the depth in mm. This converts every pixel with valid depth into a 3D point, forming a point cloud that can be meshed into a surface.
 
-### Arithmetic Mean Roughness (ISO 4287)
-
-The average absolute deviation of the height profile from the mean line:
+### Bilateral Filter — Edge-Preserving Smoothing
+Depth sensors produce noisy data. Standard Gaussian blur would smear sharp edges (object boundaries). The bilateral filter preserves edges by weighting neighbors based on BOTH spatial proximity and depth similarity:
 
 ```
-Ra = (1/N) * Sum_i |z_i - z_bar|
+BF[I](p) = (1/W) · Σ_q  G_σs(‖p−q‖) · G_σr(|I(p)−I(q)|) · I(q)
 ```
 
-where `z_i` are the sampled heights along the cross-section and `z_bar` is their mean.
+where **G_σs** is the spatial Gaussian (nearby pixels contribute more), **G_σr** is the range Gaussian (similar-depth pixels contribute more), and **W** normalizes the weights. Pixels across a depth edge have large |I(p)−I(q)| → small G_σr → edge preserved.
+
+### Surface Curvature — Shape Characterization
+The Gaussian curvature K measures the intrinsic bending of the surface — positive for peaks/valleys, negative for saddle points, zero for flat/cylindrical regions:
+
+```
+K = (fxx · fyy − fxy²) / (1 + fx² + fy²)²
+```
+
+where **fx, fy** are first partial derivatives (slope) and **fxx, fyy, fxy** are second derivatives (curvature) of the depth map. This is computed from the Monge patch representation z=f(x,y). The denominator accounts for the surface not being aligned with the image plane.
+
+### ISO 4287 Roughness — Quantitative Surface Quality
+The arithmetic mean roughness Ra is the standard industrial metric for surface finish:
+
+```
+Ra = (1/N) · Σᵢ |zᵢ − z̄|
+```
+
+where **zᵢ** are sampled heights along a cross-section profile and **z̄** is their mean. Ra represents the average deviation from the mean line — a machined surface might have Ra=0.8μm, while a cast surface might have Ra=12μm. Higher-order metrics (Rq=RMS, Rz=peak-to-valley, Rsk=skewness, Rku=kurtosis) capture different aspects of the surface texture.
 
 ### Root-Mean-Square Roughness
 
