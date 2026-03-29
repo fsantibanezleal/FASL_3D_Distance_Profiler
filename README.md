@@ -48,46 +48,48 @@ Open **http://localhost:8009** in your browser.
 
 ```
 FASL_3D_Distance_Profiler/
-|-- app/
-|   |-- __init__.py
-|   |-- main.py                     # FastAPI application entry point
-|   |-- api/
-|   |   |-- __init__.py
-|   |   |-- routes.py               # REST API endpoints (generate, upload, process, profile, metrics, export, measure)
-|   |-- simulation/
-|   |   |-- __init__.py
-|   |   |-- colormap.py             # Depth-to-colour mapping (hot, viridis, jet, greyscale)
-|   |   |-- depth_generator.py      # Synthetic RGB-D scene generator (5 scene types)
-|   |   |-- depth_processing.py     # Bilateral filter, hole filling, normals, point cloud projection
-|   |   |-- export.py               # PLY, PCD, OBJ file export
-|   |   |-- profile_analysis.py     # Roughness metrics (Ra, Rq, Rz, Rsk, Rku), histogram, object detection
-|   |   |-- surface_reconstruction.py # Depth-to-mesh, curvature, cross-section extraction
-|   |-- static/
-|       |-- index.html              # Single-page application frontend
-|       |-- css/style.css           # Dark-theme 3-panel layout stylesheet
-|       |-- js/app.js               # Main controller: wires UI to API
-|       |-- js/renderer2d.js        # 2D canvas rendering + cross-section tool
-|       |-- js/renderer3d.js        # Three.js 3D surface renderer
-|-- docs/
-|   |-- architecture.md             # System architecture and component diagram
-|   |-- depth_theory.md             # RGB-D depth processing theory with equations
-|   |-- development_history.md      # Changelog with mathematical foundations
-|   |-- references.md               # Academic papers, standards, and library references
-|   |-- svg/
-|       |-- architecture.svg        # Architecture diagram
-|       |-- pipeline.svg            # Processing pipeline diagram
-|-- tests/
-|   |-- __init__.py
-|   |-- test_depth_processing.py    # Bilateral filter, hole filling, normals, point cloud tests
-|   |-- test_export.py              # PLY, PCD, OBJ export tests
-|   |-- test_measurement.py         # Distance, angle, area measurement tests
-|   |-- test_profile.py             # Roughness, histogram, object detection tests
-|   |-- test_surface.py             # Mesh generation, curvature, cross-section tests
-|-- build.spec                      # PyInstaller spec file
-|-- Build_PyInstaller.ps1           # PowerShell build script
-|-- requirements.txt                # Python dependencies
-|-- run_app.py                      # Uvicorn launcher with auto-browser
-|-- __init__.py
+├── app/
+│   ├── __init__.py
+│   ├── main.py                     # FastAPI application entry point
+│   ├── api/
+│   │   ├── __init__.py
+│   │   └── routes.py               # REST API endpoints (generate, upload, process, profile, metrics, export, measure)
+│   ├── simulation/
+│   │   ├── __init__.py
+│   │   ├── colormap.py             # Depth-to-colour mapping (hot, viridis, jet, greyscale)
+│   │   ├── depth_generator.py      # Synthetic RGB-D scene generator (5 scene types)
+│   │   ├── depth_processing.py     # Bilateral filter, hole filling, normals, point cloud projection
+│   │   ├── export.py               # PLY, PCD, OBJ file export
+│   │   ├── profile_analysis.py     # Roughness metrics (Ra, Rq, Rz, Rsk, Rku), histogram, object detection
+│   │   └── surface_reconstruction.py # Depth-to-mesh, curvature, cross-section extraction
+│   └── static/
+│       ├── index.html              # Single-page application frontend
+│       ├── css/
+│       │   └── style.css           # Dark-theme 3-panel layout stylesheet
+│       └── js/
+│           ├── app.js              # Main controller: wires UI to API
+│           ├── renderer2d.js       # 2D canvas rendering + cross-section tool
+│           └── renderer3d.js       # Three.js 3D surface renderer
+├── tests/
+│   ├── __init__.py
+│   ├── test_depth_processing.py    # Bilateral filter, hole filling, normals, point cloud tests
+│   ├── test_export.py              # PLY, PCD, OBJ export tests
+│   ├── test_measurement.py         # Distance, angle, area measurement tests
+│   ├── test_profile.py             # Roughness, histogram, object detection tests
+│   └── test_surface.py             # Mesh generation, curvature, cross-section tests
+├── docs/
+│   ├── architecture.md             # System architecture and component diagram
+│   ├── depth_theory.md             # RGB-D depth processing theory with equations
+│   ├── development_history.md      # Changelog with mathematical foundations
+│   ├── references.md               # Academic papers, standards, and library references
+│   └── svg/
+│       ├── architecture.svg        # Architecture diagram
+│       └── pipeline.svg            # Processing pipeline diagram
+├── build.spec                      # PyInstaller spec file
+├── Build_PyInstaller.ps1           # PowerShell build script
+├── run_app.py                      # Uvicorn launcher with auto-browser
+├── requirements.txt                # Python dependencies
+└── __init__.py
 ```
 
 ## API Documentation
