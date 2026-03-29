@@ -12,15 +12,24 @@ Industrial surface inspection requires measuring roughness, curvature, and defec
 
 ---
 
-## KPIs & Metrics
+## KPIs — Impact & Value
 
-| Metric | Target | Current |
-|--------|--------|---------|
-| Bilateral filter | Edge-preserving smoothing | σ_spatial=5, σ_range=10 |
-| Curvature | Gaussian K + mean H | Second-order finite differences |
-| Roughness ISO 4287 | Ra, Rq, Rz, Rsk, Rku | All 5 metrics implemented |
-| Export formats | Standard 3D formats | PLY, PCD, OBJ |
-| Test coverage | Comprehensive | 90 tests passing |
+| KPI | Impact |
+|-----|--------|
+| Non-contact inspection | No physical probe touching the surface (vs profilometer) |
+| ISO compliance | Roughness metrics per ISO 4287 standard |
+| 3D visualization | Interactive surface exploration vs static 2D line profiles |
+| Export interoperability | PLY/PCD/OBJ for MeshLab, CloudCompare, Blender |
+
+## Project Metrics & Status
+
+| Metric | Status |
+|--------|--------|
+| Tests | 90 passing |
+| Roughness metrics | 5 (Ra, Rq, Rz, Rsk, Rku) |
+| Scene generators | 5 synthetic types |
+| Export formats | PLY, PCD, OBJ |
+| Curvature | Gaussian K + mean H |
 
 ---
 
