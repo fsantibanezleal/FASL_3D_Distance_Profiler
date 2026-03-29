@@ -8,6 +8,20 @@ A web-based RGB-D depth profiling application for synthetic and real depth data.
 
 Industrial surface inspection requires measuring roughness, curvature, and defects from depth sensor data. RGB-D cameras provide color and depth at each pixel, enabling 3D surface reconstruction and quantitative ISO 4287 characterization.
 
+![Processing Pipeline](docs/svg/pipeline.svg)
+
+---
+
+## KPIs & Metrics
+
+| Metric | Target | Current |
+|--------|--------|---------|
+| Bilateral filter | Edge-preserving smoothing | σ_spatial=5, σ_range=10 |
+| Curvature | Gaussian K + mean H | Second-order finite differences |
+| Roughness ISO 4287 | Ra, Rq, Rz, Rsk, Rku | All 5 metrics implemented |
+| Export formats | Standard 3D formats | PLY, PCD, OBJ |
+| Test coverage | Comprehensive | 90 tests passing |
+
 ---
 
 ## Mathematical Model
