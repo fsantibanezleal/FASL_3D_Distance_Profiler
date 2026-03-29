@@ -21,19 +21,19 @@ Industrial surface inspection requires measuring roughness, curvature, and defec
 | 3D visualization | Interactive surface exploration vs static 2D line profiles |
 | Export interoperability | PLY/PCD/OBJ for MeshLab, CloudCompare, Blender |
 
-## Project Metrics & Status
+## Processing Pipeline
 
-| Metric | Status |
-|--------|--------|
-| Tests | 90 passing |
-| Roughness metrics | 5 (Ra, Rq, Rz, Rsk, Rku) |
-| Scene generators | 5 synthetic types |
-| Export formats | PLY, PCD, OBJ |
-| Curvature | Gaussian K + mean H |
+![Pipeline](docs/svg/pipeline.svg)
 
 ---
 
-## Mathematical Model
+## Frontend
+
+![Frontend](docs/png/frontend.png)
+
+---
+
+## Technical Approach — Depth Processing Pipeline
 
 ### Pinhole Camera — From Pixels to 3D
 An RGB-D camera provides a depth value Z at each pixel (u,v). The pinhole model recovers the 3D world coordinates by "unprojecting" through the camera's intrinsic parameters:
@@ -97,18 +97,6 @@ n_hat = normalize(-dz/dx, -dz/dy, 1)
 
 ---
 
-## Processing Pipeline
-
-![Pipeline](docs/svg/pipeline.svg)
-
----
-
-## Frontend
-
-![Frontend](docs/png/frontend.png)
-
----
-
 ## Architecture
 
 ![Architecture](docs/svg/architecture.svg)
@@ -132,6 +120,16 @@ n_hat = normalize(-dz/dx, -dz/dy, 1)
 - **Export**: PLY (ASCII), PCD (ASCII), and Wavefront OBJ mesh export
 - **Colourmap rendering**: Hot, Viridis, Jet, and Greyscale depth visualisation
 - **Help modal**: In-app documentation with keyboard/mouse controls and pipeline explanation
+
+## Project Metrics & Status
+
+| Metric | Status |
+|--------|--------|
+| Tests | 90 passing |
+| Roughness metrics | 5 (Ra, Rq, Rz, Rsk, Rku) |
+| Scene generators | 5 synthetic types |
+| Export formats | PLY, PCD, OBJ |
+| Curvature | Gaussian K + mean H |
 
 ---
 
