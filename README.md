@@ -133,6 +133,64 @@ python tests/test_profile.py
 - [Development History](docs/development_history.md) -- Changelog with equations
 - [References](docs/references.md) -- Academic papers, standards, hardware, and software references
 
+## Mathematical Model
+
+### Pinhole Camera Back-Projection
+
+3D world coordinates are recovered from pixel (u, v) and depth Z:
+
+```
+X = (u - cx) * Z / fx,    Y = (v - cy) * Z / fy
+```
+
+where `(cx, cy)` is the principal point and `(fx, fy)` are the focal lengths in pixels.
+
+### Gaussian Curvature
+
+The intrinsic surface curvature is computed from second-order depth derivatives:
+
+```
+K = (f_xx * f_yy - f_xy^2) / (1 + f_x^2 + f_y^2)^2
+```
+
+where `f_x, f_y` are first derivatives and `f_xx, f_yy, f_xy` are second derivatives of the depth map.
+
+### Arithmetic Mean Roughness (ISO 4287)
+
+The average absolute deviation of the height profile from the mean line:
+
+```
+Ra = (1/N) * Sum_i |z_i - z_bar|
+```
+
+where `z_i` are the sampled heights along the cross-section and `z_bar` is their mean.
+
+### Root-Mean-Square Roughness
+
+```
+Rq = sqrt((1/N) * Sum_i (z_i - z_bar)^2)
+```
+
+### Bilateral Filter
+
+Edge-preserving smoothing combining spatial and range Gaussians:
+
+```
+BF[I](p) = (1/W) * Sum_q  G_sigma_s(||p - q||) * G_sigma_r(|I(p) - I(q)|) * I(q)
+```
+
+where `W` is the normalizing partition function, `G_sigma_s` is the spatial kernel, and `G_sigma_r` is the range (intensity) kernel.
+
+### Surface Normals
+
+Per-pixel unit normals computed from depth gradients:
+
+```
+n_hat = normalize(-dz/dx, -dz/dy, 1)
+```
+
+---
+
 ## References
 
 - Tomasi, C. & Manduchi, R. (1998). Bilateral Filtering for Gray and Color Images. ICCV.
