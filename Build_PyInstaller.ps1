@@ -1,6 +1,6 @@
 # =============================================================================
 # Build_PyInstaller.ps1
-# FASL 3D Distance Profiler -- PyInstaller Build Script
+# SurfaceScope -- PyInstaller Build Script
 # =============================================================================
 #
 # Usage:
@@ -12,14 +12,14 @@
 #   - All dependencies installed
 #
 # Output:
-#   dist\FASL_3D_Distance_Profiler\FASL_3D_Distance_Profiler.exe
+#   dist\SurfaceScope\SurfaceScope.exe
 # =============================================================================
 
 $ErrorActionPreference = "Stop"
 
 $ProjectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 Write-Host "============================================" -ForegroundColor Cyan
-Write-Host " FASL 3D Distance Profiler -- Build" -ForegroundColor Cyan
+Write-Host " SurfaceScope -- Build" -ForegroundColor Cyan
 Write-Host "============================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -49,7 +49,7 @@ $SpecFile = Join-Path $ProjectRoot "build.spec"
 pyinstaller $SpecFile --noconfirm
 
 # Report
-$ExePath = Join-Path $DistDir "FASL_3D_Distance_Profiler\FASL_3D_Distance_Profiler.exe"
+$ExePath = Join-Path $DistDir "SurfaceScope\SurfaceScope.exe"
 if (Test-Path $ExePath) {
     Write-Host ""
     Write-Host "============================================" -ForegroundColor Green

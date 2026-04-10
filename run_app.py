@@ -1,6 +1,6 @@
 """
-PyInstaller Entry Point for FASL 3D Distance Profiler
-======================================================
+PyInstaller Entry Point for SurfaceScope — RGB-D Surface Profiler & Analyzer
+==============================================================================
 
 Launches the Uvicorn ASGI server hosting the FastAPI application
 on port 8009.  This file is the target for PyInstaller packaging.
@@ -11,7 +11,7 @@ Usage (development)::
 
 Usage (packaged)::
 
-    FASL_3D_Distance_Profiler.exe
+    SurfaceScope.exe
 """
 
 import sys
@@ -21,7 +21,7 @@ import threading
 
 
 def main():
-    """Start the FASL 3D Distance Profiler server."""
+    """Start the SurfaceScope server."""
     # Ensure the project root is on sys.path so that `app` is importable
     project_root = os.path.dirname(os.path.abspath(__file__))
     if project_root not in sys.path:
@@ -40,7 +40,7 @@ def main():
 
     threading.Thread(target=_open_browser, daemon=True).start()
 
-    print(f"Starting FASL 3D Distance Profiler on http://{host}:{port}")
+    print(f"Starting SurfaceScope on http://{host}:{port}")
     uvicorn.run(
         "app.main:app",
         host=host,

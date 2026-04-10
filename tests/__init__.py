@@ -1,1 +1,1 @@
-"""Test suite for FASL 3D Distance Profiler."""
+"""Test suite for SurfaceScope."""
