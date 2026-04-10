@@ -65,7 +65,7 @@ References
 
 import numpy as np
 from scipy.ndimage import label
-from typing import Dict, Any, List, Tuple, Optional
+from typing import Dict, Any, List, Tuple, Optional, Union
 
 
 # ---------------------------------------------------------------------------
@@ -272,3 +272,119 @@ def detect_objects(
         })
 
     return objects
+
+
+# ---------------------------------------------------------------------------
+# Measurement tools
+# ---------------------------------------------------------------------------
+
+def measure_distance_3d(point_a: np.ndarray, point_b: np.ndarray) -> float:
+    """Euclidean distance between two 3D points.
+
+    Parameters
+    ----------
+    point_a : ndarray (3,)
+        First point [x, y, z].
+    point_b : ndarray (3,)
+        Second point [x, y, z].
+
+    Returns
+    -------
+    distance : float
+        Euclidean distance ||point_b - point_a||.
+    """
+    return float(np.linalg.norm(np.asarray(point_b) - np.asarray(point_a)))
+
+
+def measure_angle_between_normals(normal_a: np.ndarray, normal_b: np.ndarray) -> float:
+    """Angle between two surface normals in degrees.
+
+    Uses the formula:
+        theta = arccos( dot(n1, n2) / (|n1| * |n2|) )
+
+    Parameters
+    ----------
+    normal_a : ndarray (3,)
+        First surface normal vector.
+    normal_b : ndarray (3,)
+        Second surface normal vector.
+
+    Returns
+    -------
+    angle : float
+        Angle in degrees in [0, 180].
+    """
+    na = np.asarray(normal_a, dtype=np.float64)
+    nb = np.asarray(normal_b, dtype=np.float64)
+    cos_angle = np.dot(na, nb) / (np.linalg.norm(na) * np.linalg.norm(nb) + 1e-10)
+    return float(np.degrees(np.arccos(np.clip(cos_angle, -1, 1))))
+
+
+def measure_area(
+    depth: np.ndarray,
+    mask: Optional[np.ndarray] = None,
+    pixel_size: float = 1.0,
+) -> float:
+    """Vectorised surface area computation over a depth map region.
+
+    Computes the 3D surface area by projecting each pixel quad into 3D
+    and summing the areas of two triangles per quad.  Uses NumPy
+    vectorisation for performance.
+
+    Parameters
+    ----------
+    depth : ndarray (H, W), float
+        Depth map in mm.
+    mask : ndarray (H, W), bool or None
+        Region of interest.  If None, all pixels with depth > 0 are used.
+    pixel_size : float
+        Physical size of one pixel in mm.
+
+    Returns
+    -------
+    area : float
+        Total 3D surface area in mm^2.
+    """
+    H, W = depth.shape
+    if mask is None:
+        mask = depth > 0
+
+    # Valid quads: all 4 corners must be valid
+    valid = mask[:-1, :-1] & mask[1:, :-1] & mask[:-1, 1:] & mask[1:, 1:]
+
+    # 3D positions of quad corners
+    y_grid, x_grid = np.mgrid[:H, :W]
+    x3d = x_grid.astype(np.float64) * pixel_size
+    y3d = y_grid.astype(np.float64) * pixel_size
+    z = depth.astype(np.float64)
+
+    # Triangle 1: (i,j), (i,j+1), (i+1,j)
+    v1x = x3d[:-1, 1:] - x3d[:-1, :-1]
+    v1y = y3d[:-1, 1:] - y3d[:-1, :-1]
+    v1z = z[:-1, 1:] - z[:-1, :-1]
+    v2x = x3d[1:, :-1] - x3d[:-1, :-1]
+    v2y = y3d[1:, :-1] - y3d[:-1, :-1]
+    v2z = z[1:, :-1] - z[:-1, :-1]
+
+    cross1 = np.sqrt(
+        (v1y * v2z - v1z * v2y) ** 2
+        + (v1z * v2x - v1x * v2z) ** 2
+        + (v1x * v2y - v1y * v2x) ** 2
+    )
+
+    # Triangle 2: (i,j+1), (i+1,j+1), (i+1,j)
+    v3x = x3d[1:, 1:] - x3d[:-1, 1:]
+    v3y = y3d[1:, 1:] - y3d[:-1, 1:]
+    v3z = z[1:, 1:] - z[:-1, 1:]
+    v4x = x3d[1:, :-1] - x3d[:-1, 1:]
+    v4y = y3d[1:, :-1] - y3d[:-1, 1:]
+    v4z = z[1:, :-1] - z[:-1, 1:]
+
+    cross2 = np.sqrt(
+        (v3y * v4z - v3z * v4y) ** 2
+        + (v3z * v4x - v3x * v4z) ** 2
+        + (v3x * v4y - v3y * v4x) ** 2
+    )
+
+    total = 0.5 * np.sum((cross1 + cross2) * valid)
+    return float(total)

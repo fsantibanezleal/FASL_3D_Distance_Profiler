@@ -10,7 +10,7 @@
   <rect width="800" height="500" fill="url(#grad1)" rx="10"/>
 
   <!-- Title -->
-  <text x="400" y="35" fill="#e94560" font-size="18" font-weight="bold" text-anchor="middle">FASL 3D Distance Profiler -- Architecture</text>
+  <text x="400" y="35" fill="#e94560" font-size="18" font-weight="bold" text-anchor="middle">SurfaceScope -- Architecture</text>
 
   <!-- Browser Layer -->
   <rect x="50" y="60" width="700" height="120" fill="none" stroke="#4ecdc4" stroke-width="2" rx="8" stroke-dasharray="6,3"/>

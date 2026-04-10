@@ -1,5 +1,5 @@
 """
-FASL 3D Distance Profiler
+SurfaceScope -- RGB-D Surface Profiler & Analyzer
 =========================
 
 RGB-D depth profiling application for synthetic and real depth data.

@@ -1,6 +1,6 @@
 """
-FASL 3D Distance Profiler -- FastAPI Application
-=================================================
+SurfaceScope -- RGB-D Surface Profiler & Analyzer -- FastAPI Application
+=========================================================================
 
 Main entry point for the FastAPI web server.  Serves the single-page
 application (static files) and mounts the REST API router.
@@ -30,7 +30,7 @@ from app.api.routes import router as api_router
 # ---------------------------------------------------------------------------
 
 app = FastAPI(
-    title="FASL 3D Distance Profiler",
+    title="SurfaceScope — RGB-D Surface Profiler & Analyzer",
     description=(
         "RGB-D depth profiling application for synthetic and real depth data. "
         "Generates depth maps, applies processing pipelines (bilateral filter, "
