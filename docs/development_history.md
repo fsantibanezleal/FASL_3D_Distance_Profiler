@@ -2,6 +2,14 @@
 
 ---
 
+## 2026-04-18 -- Documentation polish
+
+- Added `docs/user_guide.md`: task-oriented operator walkthrough covering launch, panels, processing knobs, cross-section profiling, export formats, troubleshooting, and REST API examples.
+- Added `docs/svg/rgbd_sensor.svg`: domain diagram showing pinhole geometry, camera lenses (IR projector / RGB / IR camera), frustum, focal length, principal point, and the pixel → 3D unprojection equations.
+- README cleanup: removed duplicated Bilateral Filter and Rq equation blocks (already covered in the Technical Approach section and in `depth_theory.md`); swapped the redundant second pipeline image for the new RGB-D sensor diagram.
+
+---
+
 ## v2.0.0 (2026-03-28) -- Complete Python Rewrite
 
 Complete rewrite of the 3D Distance Profiler as a web application with Python/FastAPI backend and Three.js frontend. Renamed to **SurfaceScope -- RGB-D Surface Profiler & Analyzer**.
