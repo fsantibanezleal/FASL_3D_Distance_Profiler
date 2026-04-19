@@ -6,6 +6,10 @@ RESTful endpoints for generating, uploading, processing, and analysing
 RGB-D depth data.  All heavy computation runs in the backend; the
 frontend receives pre-computed meshes, images, and metrics as JSON.
 
+Application state (current scene) lives in ``app.core.state.AppState``
+and is injected via FastAPI ``Depends(get_app_state)`` so routes remain
+unit-testable and the state can be overridden in tests.
+
 Endpoints
 ---------
 POST /api/generate   - Generate a synthetic RGB-D scene
@@ -20,11 +24,12 @@ import io
 import base64
 import numpy as np
 from typing import Optional, List
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from PIL import Image
 
+from app.core import AppState, get_app_state
 from app.simulation.depth_generator import generate_scene, list_scene_types
 from app.simulation.depth_processing import (
     bilateral_filter_depth,
@@ -49,28 +54,6 @@ from app.simulation.export import export_ply, export_pcd, export_obj_mesh
 from app.simulation.colormap import apply_colormap, COLOURMAP_NAMES
 
 router = APIRouter(prefix="/api", tags=["api"])
-
-
-# ---------------------------------------------------------------------------
-# In-memory state (single-user demo application)
-# ---------------------------------------------------------------------------
-
-class AppState:
-    """Holds the current scene data in memory."""
-    def __init__(self):
-        self.rgb: Optional[np.ndarray] = None          # (H, W, 3) uint8
-        self.depth: Optional[np.ndarray] = None         # (H, W) float32
-        self.normals: Optional[np.ndarray] = None       # (H, W, 3) float32
-        self.processed_depth: Optional[np.ndarray] = None
-        self.scene_type: str = ""
-        self.width: int = 256
-        self.height: int = 256
-
-    def has_data(self) -> bool:
-        return self.depth is not None
-
-
-state = AppState()
 
 
 # ---------------------------------------------------------------------------
@@ -155,7 +138,7 @@ async def get_colormaps():
 
 
 @router.post("/generate")
-async def generate(req: GenerateRequest):
+async def generate(req: GenerateRequest, state: AppState = Depends(get_app_state)):
     """Generate a synthetic RGB-D scene and store in application state.
 
     Returns base64-encoded PNG images for RGB, depth colourmap, and
@@ -176,13 +159,14 @@ async def generate(req: GenerateRequest):
     state.width = req.width
     state.height = req.height
 
-    return _build_state_response()
+    return _build_state_response(state)
 
 
 @router.post("/upload")
 async def upload(
     depth_file: UploadFile = File(..., description="Depth map image (16-bit PNG or 8-bit)"),
     rgb_file: Optional[UploadFile] = File(None, description="Optional RGB image"),
+    state: AppState = Depends(get_app_state),
 ):
     """Upload depth and optional RGB images.
 
@@ -226,11 +210,11 @@ async def upload(
     state.scene_type = "uploaded"
     state.height, state.width = depth_arr.shape
 
-    return _build_state_response()
+    return _build_state_response(state)
 
 
 @router.post("/process")
-async def process(req: ProcessRequest):
+async def process(req: ProcessRequest, state: AppState = Depends(get_app_state)):
     """Apply the depth processing pipeline to the current scene.
 
     Pipeline steps:
@@ -258,19 +242,19 @@ async def process(req: ProcessRequest):
     state.processed_depth = processed
     state.normals = compute_normals(processed)
 
-    return _build_state_response()
+    return _build_state_response(state)
 
 
 @router.get("/state")
-async def get_state():
+async def get_state(state: AppState = Depends(get_app_state)):
     """Return the full current state (images + mesh)."""
     if not state.has_data():
         return {"loaded": False}
-    return _build_state_response()
+    return _build_state_response(state)
 
 
 @router.post("/profile")
-async def profile(req: ProfileRequest):
+async def profile(req: ProfileRequest, state: AppState = Depends(get_app_state)):
     """Extract a cross-section profile between two points.
 
     Returns the 1D height profile, cumulative distances, and
@@ -300,7 +284,7 @@ async def profile(req: ProfileRequest):
 
 
 @router.get("/metrics")
-async def metrics():
+async def metrics(state: AppState = Depends(get_app_state)):
     """Compute global surface metrics for the current scene.
 
     Returns depth histogram, object detection results, and curvature
@@ -337,7 +321,7 @@ async def metrics():
 # ---------------------------------------------------------------------------
 
 @router.get("/export/ply")
-async def export_ply_endpoint():
+async def export_ply_endpoint(state: AppState = Depends(get_app_state)):
     """Export the current scene point cloud / mesh as PLY (ASCII).
 
     Returns a downloadable PLY file as a streaming response.
@@ -365,7 +349,7 @@ async def export_ply_endpoint():
 
 
 @router.get("/export/pcd")
-async def export_pcd_endpoint():
+async def export_pcd_endpoint(state: AppState = Depends(get_app_state)):
     """Export the current scene point cloud as PCD (ASCII).
 
     Returns a downloadable PCD file as a streaming response.
@@ -391,7 +375,7 @@ async def export_pcd_endpoint():
 
 
 @router.get("/export/obj")
-async def export_obj_endpoint():
+async def export_obj_endpoint(state: AppState = Depends(get_app_state)):
     """Export the current scene mesh as Wavefront OBJ.
 
     Returns a downloadable OBJ file as a streaming response.
@@ -421,7 +405,7 @@ async def export_obj_endpoint():
 # ---------------------------------------------------------------------------
 
 @router.post("/measure")
-async def measure(req: MeasureRequest):
+async def measure(req: MeasureRequest, state: AppState = Depends(get_app_state)):
     """Perform a measurement on the current scene.
 
     Supported measurement types:
@@ -460,8 +444,22 @@ async def measure(req: MeasureRequest):
 # Internal state builder
 # ---------------------------------------------------------------------------
 
-def _build_state_response(colormap: str = "viridis", subsample: int = 2) -> dict:
-    """Build the full JSON state response including images and mesh."""
+def _build_state_response(
+    state: AppState,
+    colormap: str = "viridis",
+    subsample: int = 2,
+) -> dict:
+    """Build the full JSON state response including images and mesh.
+
+    Parameters
+    ----------
+    state : AppState
+        The current application state (injected from the route).
+    colormap : str, default ``"viridis"``
+        Colourmap name applied to the depth map preview.
+    subsample : int, default ``2``
+        Vertex subsampling factor for the Three.js mesh.
+    """
     depth = state.processed_depth if state.processed_depth is not None else state.depth
 
     # Images as base64 PNGs

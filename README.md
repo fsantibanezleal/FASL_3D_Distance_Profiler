@@ -8,7 +8,7 @@ A web-based RGB-D depth profiling application for synthetic and real depth data.
 
 Industrial surface inspection requires measuring roughness, curvature, and defects from depth sensor data. RGB-D cameras provide color and depth at each pixel, enabling 3D surface reconstruction and quantitative ISO 4287 characterization.
 
-![Processing Pipeline](docs/svg/pipeline.svg)
+![RGB-D Sensor](docs/svg/rgbd_sensor.svg)
 
 ---
 
@@ -71,29 +71,17 @@ Ra = (1/N) · Σᵢ |zᵢ − z̄|
 
 where **zᵢ** are sampled heights along a cross-section profile and **z̄** is their mean. Ra represents the average deviation from the mean line — a machined surface might have Ra=0.8μm, while a cast surface might have Ra=12μm. Higher-order metrics (Rq=RMS, Rz=peak-to-valley, Rsk=skewness, Rku=kurtosis) capture different aspects of the surface texture.
 
-### Root-Mean-Square Roughness
+### Surface Normals — Shading and Direction
 
-```
-Rq = sqrt((1/N) * Sum_i (z_i - z_bar)^2)
-```
-
-### Bilateral Filter
-
-Edge-preserving smoothing combining spatial and range Gaussians:
-
-```
-BF[I](p) = (1/W) * Sum_q  G_sigma_s(||p - q||) * G_sigma_r(|I(p) - I(q)|) * I(q)
-```
-
-where `W` is the normalizing partition function, `G_sigma_s` is the spatial kernel, and `G_sigma_r` is the range (intensity) kernel.
-
-### Surface Normals
-
-Per-pixel unit normals computed from depth gradients:
+Per-pixel unit normals are computed from depth gradients, enabling Phong lighting and orientation analysis:
 
 ```
 n_hat = normalize(-dz/dx, -dz/dy, 1)
 ```
+
+where `dz/dx`, `dz/dy` are the depth partial derivatives along image axes (via `numpy.gradient`). The resulting unit vector points away from the surface and is used both for rendering and for computing surface area.
+
+See [docs/depth_theory.md](docs/depth_theory.md) for the full mathematical reference (all equations, derivations, and numerical considerations).
 
 ---
 
@@ -199,9 +187,11 @@ FASL_3D_Distance_Profiler/
 │   ├── depth_theory.md             # RGB-D depth processing theory with equations
 │   ├── development_history.md      # Changelog with mathematical foundations
 │   ├── references.md               # Academic papers, standards, and library references
+│   ├── user_guide.md               # Operator walkthrough: load, process, profile, export
 │   └── svg/
 │       ├── architecture.svg        # Architecture diagram
-│       └── pipeline.svg            # Processing pipeline diagram
+│       ├── pipeline.svg            # Processing pipeline diagram
+│       └── rgbd_sensor.svg         # RGB-D sensor geometry + pinhole model
 ├── build.spec                      # PyInstaller spec file
 ├── Build_PyInstaller.ps1           # PowerShell build script
 ├── run_app.py                      # Uvicorn launcher with auto-browser
@@ -239,6 +229,7 @@ FASL_3D_Distance_Profiler/
 
 ## Documentation
 
+- [User Guide](docs/user_guide.md) -- Task-oriented walkthrough: load data, process, inspect, profile, export
 - [Architecture](docs/architecture.md) -- System overview, technology stack, data flow
 - [Depth Theory](docs/depth_theory.md) -- Mathematical foundations: pinhole model, bilateral filter, curvature, roughness
 - [Development History](docs/development_history.md) -- Changelog with equations
