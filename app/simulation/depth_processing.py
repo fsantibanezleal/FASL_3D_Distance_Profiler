@@ -136,7 +136,13 @@ def bilateral_filter_depth(
             output += w_total * shifted
             weight_sum += w_total
 
-    result = np.where(weight_sum > 0, output / weight_sum, 0.0)
+    # ``np.where`` evaluates both branches before selecting, so the division
+    # runs on zero-weight pixels too and would emit a spurious
+    # ``RuntimeWarning: invalid value encountered in divide``.  We silence the
+    # warning scoped to just this division; the mask still picks ``0.0`` for
+    # those pixels, so the output is unchanged.
+    with np.errstate(invalid="ignore", divide="ignore"):
+        result = np.where(weight_sum > 0, output / weight_sum, 0.0)
     result[~valid] = 0.0
     return result.astype(np.float32)
 
