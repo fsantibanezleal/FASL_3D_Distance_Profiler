@@ -12,6 +12,7 @@ Covers:
 import sys
 import os
 import unittest
+import warnings
 import numpy as np
 
 # Ensure app package is importable
@@ -67,6 +68,32 @@ class TestBilateralFilter(unittest.TestCase):
         depth = np.full((32, 32), 500.0, dtype=np.float64)
         filtered = bilateral_filter_depth(depth)
         self.assertEqual(filtered.dtype, np.float32)
+
+    def test_no_runtime_warning_on_zero_border(self):
+        """Zero-border pixels must not raise a divide-by-zero RuntimeWarning.
+
+        Regression test for issue #18: ``np.where(weight_sum > 0, ...)``
+        still evaluates the division on zero-weight pixels, so an
+        ``np.errstate`` scope must silence the warning.
+        """
+        depth = np.full((32, 32), 500.0, dtype=np.float32)
+        # Invalid border — every pixel within 5 px of the edge is zero,
+        # which creates zero-weight rows once the kernel reaches them.
+        depth[:5, :] = 0.0
+        depth[-5:, :] = 0.0
+        depth[:, :5] = 0.0
+        depth[:, -5:] = 0.0
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", RuntimeWarning)
+            # Should not raise
+            filtered = bilateral_filter_depth(
+                depth, sigma_spatial=3, sigma_range=10
+            )
+        # Interior still valid
+        self.assertGreater(filtered[16, 16], 490.0)
+        # Border still zero
+        self.assertTrue(np.all(filtered[:5, :] == 0.0))
 
 
 class TestFillHoles(unittest.TestCase):
