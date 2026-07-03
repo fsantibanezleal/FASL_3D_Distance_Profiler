@@ -1,5 +1,8 @@
 # SurfaceScope -- RGB-D Surface Profiler & Analyzer
 
+[![License](https://img.shields.io/github/license/fsantibanezleal/FASL_3D_Distance_Profiler)](LICENSE)
+[![Live demo](https://img.shields.io/badge/demo-live-2ea44f)](https://profiler.fasl-work.com)
+
 A web-based RGB-D depth profiling application for synthetic and real depth data. SurfaceScope generates depth maps from five configurable scene types, applies edge-preserving processing pipelines (bilateral filter, hole filling), reconstructs interactive 3D surface meshes, computes differential geometry quantities (Gaussian and mean curvature), extracts cross-section profiles, and reports ISO 4287 surface roughness metrics (Ra, Rq, Rz, Rsk, Rku). Built with a Python/FastAPI backend and a Three.js-powered frontend for real-time 3D visualization.
 
 ---
